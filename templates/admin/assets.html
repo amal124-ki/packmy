@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Travel assets{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+  <div><h1 class="text-3xl font-extrabold">Travel assets</h1><p class="text-slate-500 mt-1">Attractions and accommodation used by the AI planner ({{ items|length }} shown).</p></div>
+  <div class="flex gap-2">
+    <form method="get"><select name="region" class="input !py-2" onchange="this.form.submit()">
+      <option value="">All regions</option>{% for r in regions %}<option {{ 'selected' if r == region }}>{{ r }}</option>{% endfor %}</select></form>
+    <a href="{{ url_for('admin.asset_form') }}" class="btn-primary !py-2 whitespace-nowrap">+ Add asset</a>
+  </div>
+</div>
+<div class="card overflow-x-auto mt-6">
+  <table class="w-full">
+    <thead class="bg-slate-50"><tr><th class="th">Name</th><th class="th">Type</th><th class="th">Region</th><th class="th">Category</th><th class="th">Cost (RM)</th><th class="th">Hours</th><th class="th">Rating</th><th class="th"></th></tr></thead>
+    <tbody class="divide-y">
+      {% for a in items %}
+      <tr class="{{ 'opacity-50' if not a.is_active }}">
+        <td class="td font-semibold">{{ a.name }}{% if not a.is_active %} <span class="chip bg-slate-200 text-slate-600">hidden</span>{% endif %}</td>
+        <td class="td">{% if a.asset_type == 'accommodation' %}<span class="chip bg-sky-100 text-sky-700">hotel</span>{% else %}<span class="chip bg-brand-100 text-brand-700">attraction</span>{% endif %}</td>
+        <td class="td">{{ a.region }}</td><td class="td">{{ a.category }}</td>
+        <td class="td">{{ '%.0f'|format(a.est_cost) }}{{ '/night' if a.asset_type == 'accommodation' }}</td>
+        <td class="td whitespace-nowrap">{{ a.open_time }}–{{ a.close_time }}</td><td class="td">{{ a.rating }}</td>
+        <td class="td whitespace-nowrap text-right">
+          <a href="{{ url_for('admin.asset_form', asset_id=a.id) }}" class="text-brand-700 font-semibold mr-3">Edit</a>
+          <form method="post" action="{{ url_for('admin.asset_delete', asset_id=a.id) }}" class="inline" onsubmit="return confirm('Delete {{ a.name|e }}?')">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="text-rose-600 font-semibold">Delete</button></form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PackMY{% endblock %} · PackMY</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo-full.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS (CDN version - fine for a student project / prototype) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#effcf9',100:'#c9f5ec',200:'#94e9da',300:'#57d6c4',400:'#28bba9',500:'#0f9e8f',600:'#0a7f75',700:'#0c655e',800:'#0e504b',900:'#10433f' },
+            sun: { 400:'#fbbf24', 500:'#f59e0b' }
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer components {
+      .card  { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+      .label { @apply block text-sm font-semibold text-slate-700 mb-1; }
+      .input { @apply w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 bg-white; }
+      .btn   { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition; }
+      .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
+      .btn-ghost   { @apply btn border border-slate-300 text-slate-700 hover:bg-slate-50; }
+      .btn-danger  { @apply btn border border-rose-200 text-rose-700 hover:bg-rose-50; }
+      .chip  { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+      .th    { @apply text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-4 py-3; }
+      .td    { @apply px-4 py-3 text-sm text-slate-700; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+
+  <!-- Navigation bar -->
+  <header class="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-[1000]">
+    <nav class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+      <a href="{{ url_for('traveller.home') }}" class="flex items-center gap-2 font-extrabold text-xl text-brand-700">
+        <img src="{{ url_for('static', filename='img/logo-full.png') }}" alt="PackMY" class="h-16 w-auto rounded-lg">
+        <span>
+          </span>
+      </a>
+      <button id="menuBtn" class="md:hidden p-2 rounded-lg hover:bg-slate-100" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div id="menu" class="hidden md:flex absolute md:static top-20 left-0 right-0 bg-white md:bg-transparent border-b md:border-0 flex-col md:flex-row gap-1 md:gap-2 p-3 md:p-0 text-sm font-semibold">
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_admin %}
+            <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('admin.assets') }}">Travel Assets</a>
+            <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('admin.users') }}">Users</a>
+            <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('admin.settings') }}">ALNS Settings</a>
+          {% else %}
+            <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('traveller.dashboard') }}">My Trips</a>
+            <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('traveller.profile') }}">Profile</a>
+            <a class="btn-primary !py-2" href="{{ url_for('traveller.new_trip') }}">+ Plan a trip</a>
+          {% endif %}
+          <a class="px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100" href="{{ url_for('auth.logout') }}">Log out</a>
+        {% else %}
+          <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ url_for('auth.login') }}">Log in</a>
+          <a class="btn-primary !py-2" href="{{ url_for('auth.register') }}">Sign up free</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="max-w-6xl mx-auto w-full px-4 mt-4 space-y-2">
+        {% for cat, msg in messages %}
+          <div class="rounded-xl px-4 py-3 text-sm font-medium
+            {% if cat == 'error' %}bg-rose-50 text-rose-800 border border-rose-200
+            {% elif cat == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200
+            {% else %}bg-sky-50 text-sky-800 border border-sky-200{% endif %}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="flex-1 {% block main_class %}max-w-6xl mx-auto w-full px-4 py-8{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-slate-500 flex flex-col md:flex-row justify-between gap-2">
+      <span>PackMY · AI Destination Recommendation &amp; Itinerary for Malaysian Tourism</span>
+    
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      const m = document.getElementById('menu');
+      m.classList.toggle('hidden'); m.classList.toggle('flex');
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

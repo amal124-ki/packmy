@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Plan your Malaysian trip{% endblock %}
+{% block main_class %}w-full{% endblock %}
+{% block content %}
+<!-- Hero -->
+<section class="relative overflow-hidden text-white bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='img/bg.jpg') }}');">
+  <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10"></div>
+  <div class="relative max-w-6xl mx-auto px-4 py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
+    <div>
+      <span class="chip bg-white/15 text-white mb-4">AI trip planner for Malaysia</span>
+      <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">Tell us your trip.<br>We plan every day.</h1>
+      <p class="mt-5 text-lg text-brand-50/90 max-w-md">Describe what you like, set a budget, and PackMY picks the right places and puts them in the best order, with times, a map and costs.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="{{ url_for('traveller.new_trip') if current_user.is_authenticated else url_for('auth.register') }}" class="btn bg-sun-400 text-slate-900 hover:bg-sun-500 text-base px-6 py-3">Plan my trip</a>
+        {% if not current_user.is_authenticated %}<a href="{{ url_for('auth.login') }}" class="btn border border-white/40 text-white hover:bg-white/10 text-base px-6 py-3">Log in</a>{% endif %}
+      </div>
+    </div>
+    <div class="card !border-0 text-slate-800 p-5 shadow-2xl">
+      <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Example request</p>
+      <p class="text-lg font-semibold">"3 days in Penang for 2 people, RM1,500. We love street food and heritage, relaxed pace."</p>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs">
+        <span class="chip bg-brand-50 text-brand-700">Region: Penang</span>
+        <span class="chip bg-brand-50 text-brand-700">3 days</span>
+        <span class="chip bg-brand-50 text-brand-700">RM1,500</span>
+        <span class="chip bg-sun-400/20 text-amber-800">food</span>
+        <span class="chip bg-sun-400/20 text-amber-800">culture</span>
+        <span class="chip bg-slate-100 text-slate-700">relaxed</span>
+      </div>
+      <div class="mt-4 border-t pt-4 space-y-2 text-sm">
+        <div class="flex gap-3"><span class="font-bold text-brand-600 w-12">Day 1</span><span>Street Art → Chew Jetty → Chulia Street hawkers</span></div>
+        <div class="flex gap-3"><span class="font-bold text-brand-600 w-12">Day 2</span><span>Kek Lok Si → Batu Ferringhi → Gurney Drive</span></div>
+        <div class="flex gap-3"><span class="font-bold text-brand-600 w-12">Day 3</span><span>Peranakan Mansion → Blue Mansion</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- Features: Travel Planning Made Simple -->
+<section class="max-w-6xl mx-auto px-4 py-16">
+  <div class="rounded-3xl bg-slate-100 px-4 py-10 md:px-6">
+    <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800">Travel Planning Made Simple</h2>
+    <p class="text-center text-slate-500 text-lg mt-3">Everything you need for a smarter and more enjoyable trip.</p>
+    <div class="grid md:grid-cols-3 gap-4 mt-8">
+      {% for n, t, d in [
+        ('01', 'Personalised Travel Plans', 'Discover attractions that match your interests, travel style and preferences.'),
+        ('02', 'Budget-Friendly Trips', 'Plan your journey based on your budget and make the most of your travel expenses.'),
+        ('03', 'Optimised Daily Itineraries', 'Get organised daily travel routes with suitable attractions and opening hours.')] %}
+      <div class="bg-white rounded-2xl p-6 hover:shadow-md transition">
+        <p class="text-4xl font-bold text-brand-600">{{ n }}</p>
+        <h3 class="mt-5 text-xl font-semibold text-slate-900">{{ t }}</h3>
+        <p class="mt-3 text-slate-500 leading-relaxed">{{ d }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Regions -->
+
+<section class="max-w-6xl mx-auto px-4 pb-20">
+  <h2 class="text-2xl font-extrabold">Destinations</h2>
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+    {% set colors = ['from-teal-500 to-emerald-600','from-amber-400 to-orange-500','from-rose-400 to-red-500','from-sky-400 to-blue-600','from-lime-500 to-green-600','from-fuchsia-400 to-purple-600'] %}
+    {% for r in regions %}
+    {% set img_map = {'Kuala Lumpur': 'kl', 'Kota Kinabalu': 'kk'} %}
+    {% set slug = img_map.get(r, r|lower|replace(" ", "-")) %}
+    <a href="{{ url_for('traveller.new_trip', region=r) }}" class="group relative overflow-hidden rounded-2xl h-40 text-white bg-gradient-to-br {{ colors[loop.index0 % colors|length] }} shadow-sm hover:shadow-lg transition">
+      <div class="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition duration-500" style="background-image: url('{{ url_for('static', filename='img/region/' ~ slug ~ '.jpg') }}');"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+      <div class="relative h-full p-5 flex flex-col justify-end">
+        <span class="font-extrabold text-lg leading-tight">{{ r }}</span>
+        <span class="text-xs opacity-90">{{ counts[r] }} attractions</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

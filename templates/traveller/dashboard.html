@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}My trips{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+  <div>
+    <h1 class="text-3xl font-extrabold">Hi, {{ current_user.name.split()[0] }} 👋</h1>
+    <p class="text-slate-500 mt-1">Your planned trips are below.</p>
+  </div>
+  <a href="{{ url_for('traveller.new_trip') }}" class="btn-primary">+ Plan a new trip</a>
+</div>
+
+{% if not current_user.profile or not current_user.profile.interests %}
+<div class="mt-6 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
+  Tip: <a class="font-semibold underline" href="{{ url_for('traveller.profile') }}">set up your travel profile</a> so your interests and budget are filled in for you.
+</div>
+{% endif %}
+
+{% if trips %}
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-8">
+  {% for t in trips %}
+  <div class="card p-5 flex flex-col">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wide text-brand-600">{{ t.region }}</p>
+        <h3 class="font-bold text-lg">{{ t.days }}-day trip</h3>
+      </div>
+      {% if t.status == 'done' %}<span class="chip bg-emerald-100 text-emerald-700">Ready</span>
+      {% elif t.status == 'failed' %}<span class="chip bg-rose-100 text-rose-700">Failed</span>
+      {% else %}<span class="chip bg-slate-100 text-slate-600">Pending</span>{% endif %}
+    </div>
+    <p class="text-sm text-slate-500 mt-2">{{ t.start_date.strftime('%d %b %Y') }} · {{ t.travellers }} pax · Budget RM{{ '{:,.0f}'.format(t.budget) }}</p>
+    {% if t.itinerary %}
+      <p class="text-sm mt-1">Estimated <b>RM{{ '{:,.0f}'.format(t.itinerary.total_cost) }}</b> · {{ t.itinerary.segments|length }} places</p>
+    {% endif %}
+    <div class="flex flex-wrap gap-1 mt-3">{% for i in t.interests.split(',') if i %}<span class="chip bg-slate-100 text-slate-600">{{ i }}</span>{% endfor %}</div>
+    <div class="mt-auto pt-4 flex gap-2">
+      {% if t.itinerary %}<a href="{{ url_for('traveller.view_trip', trip_id=t.id) }}" class="btn-primary flex-1 !py-2 text-sm">View</a>
+      {% else %}
+      <form method="post" action="{{ url_for('traveller.regenerate', trip_id=t.id) }}" class="flex-1">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn-primary w-full !py-2 text-sm">Try again</button>
+      </form>{% endif %}
+      <form method="post" action="{{ url_for('traveller.delete_trip', trip_id=t.id) }}" onsubmit="return confirm('Delete this trip?')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn-danger !py-2 text-sm">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card p-12 mt-8 text-center">
+  <p class="text-5xl">🧳</p>
+  <h2 class="font-bold text-xl mt-3">No trips yet</h2>
+  <p class="text-slate-500 mt-1">Tell PackMY where you want to go and it will plan every day for you.</p>
+  <a href="{{ url_for('traveller.new_trip') }}" class="btn-primary mt-5">Plan my first trip</a>
+</div>
+{% endif %}
+{% endblock %}
