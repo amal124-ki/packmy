@@ -99,32 +99,4 @@ packmy/
 
 ---
 
-## 4. Suggested team split
 
-| Member | Role | Main files | Report and demo |
-|---|---|---|---|
-| **Pravin** | Project lead + **ALNS optimiser** + integration | `ai/alns.py`, `ai/pipeline.py`, `app.py` | Chapter 4 Module 3, ALNS testing (parameter tuning, convergence charts) |
-| **Nur Afif** | **NLP + Fuzzy Logic** | `ai/nlp.py`, `ai/fuzzy.py` | Module 1 and 2, membership function and rule tables, fuzzy test cases |
-| **Nik Izz** | **Backend + database + admin module** | `models.py`, `seed.py`, `routes/auth.py`, `routes/admin.py`, `config.py` | ERD / 8-table schema, verifying the real Malaysian data, security testing |
-| **Amal Ellisa** | **Frontend UI/UX + output** | `templates/`, `routes/traveller.py`, `utils/pdf.py` | UI mockups, poster, video walkthrough, user testing (usability survey) |
-
-Everyone: end-to-end testing in Weeks 9–10.
-
-## 5. Working together with GitHub (recommended)
-
-1. Pravin creates a **private GitHub repo**, uploads this folder and invites the other 3 members.
-2. Everyone: `git clone <repo-url>`
-3. Each member works on their **own branch**, for example `git checkout -b afif-fuzzy`
-4. Save work: `git add .` → `git commit -m "Add fuzzy rules for beach"` → `git push`
-5. Open a **Pull Request** on GitHub. Another member checks it before merging into `main`.
-6. Pull the latest code before you start each day: `git checkout main` → `git pull`
-
-Never commit your own MySQL password. Use the `DATABASE_URL` environment variable if you want to keep it out of `config.py`.
-
-## 6. Ideas for improvement (good for the "Future Work" section)
-- Replace the rule-based NLP with spaCy, or a generative model API, for better entity extraction
-- Use real road distances (OpenRouteService / Google Distance Matrix) instead of straight-line × 1.3
-- Respect the days each attraction is open (for example Sunday-only markets)
-- Compare ALNS against a Genetic Algorithm baseline in the testing chapter
-
-**Note:** prices, opening hours and coordinates in `seed.py` are approximate sample values. Check them before the final demo.
