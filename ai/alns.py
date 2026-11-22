@@ -8,13 +8,14 @@ Workflow (same as the report):
                            first day that still has room (end of the route).
     2. Destroy phase     - remove some stops (random / worst / related / whole day).
     3. Repair phase      - insert stops back (greedy / regret-2 / random-order greedy).
-    4. Constraint check  - opening hours, daily time window, budget, no duplicates.
+    4. Local search      - 2-opt intra-day route polish to eliminate backtracking.
+    5. Constraint check  - opening hours, daily time window, budget, no duplicates.
     + Adaptive weights   - operators that find better itineraries get picked more often.
     + Simulated annealing acceptance - sometimes accept a worse itinerary to escape local optima.
 
 Objective (maximise):
     100 x (sum of fuzzy suitability of visited places)  -  distance_weight x (total km)
-    - 40 x (number of empty days)
+    - 40 x (number of empty days)  -  12 x (repeated categories within the same day)
 
 A solution is a list of days; each day is a list of candidate indexes (visit order).
 Every day starts and ends at the base (the hotel).
@@ -30,6 +31,7 @@ AVG_SPEED_KMH = 35  # average driving speed in Malaysian towns
 STOP_BUFFER_MIN = 10  # parking / walking buffer per move
 LUNCH_MIN = 60
 EMPTY_DAY_PENALTY = 40  # encourages spreading places across all trip days
+REPEAT_CATEGORY_PENALTY = 12  # encourages varied categories within each day
 
 DEFAULT_PARAMS = {
     "iterations": 400,
@@ -88,6 +90,7 @@ class ALNS:
         self.visit = [x["asset"].visit_minutes for x in candidates]
         self.ticket = [x["asset"].est_cost * travellers for x in candidates]
         self.score = [x["score"] for x in candidates]
+        self.cat = [(x["asset"].category or "").lower() for x in candidates]
 
         self.destroy_ops = [self.random_removal, self.worst_removal, self.related_removal, self.day_removal]
         self.repair_ops = [self.greedy_insert, self.regret_insert, self.random_greedy_insert]
@@ -136,8 +139,12 @@ class ALNS:
     def objective(self, sol):
         km = sum(self.day_km(d) for d in sol)
         empty = sum(1 for d in sol if not d)
+        dup_cats = 0
+        for d in sol:
+            cats = [self.cat[i] for i in d if self.cat[i]]
+            dup_cats += len(cats) - len(set(cats))
         return (100 * sum(self.score[i] for d in sol for i in d) - self.p["distance_weight"] * km
-                - EMPTY_DAY_PENALTY * empty)
+                - EMPTY_DAY_PENALTY * empty - REPEAT_CATEGORY_PENALTY * dup_cats)
 
     def is_feasible(self, sol):
         visited = [i for d in sol for i in d]
@@ -169,6 +176,8 @@ class ALNS:
                 delta = 100 * self.score[i] - self.p["distance_weight"] * extra_km
                 if not route:
                     delta += EMPTY_DAY_PENALTY  # filling an empty day removes its penalty
+                elif self.cat[i] and any(self.cat[j] == self.cat[i] for j in route):
+                    delta -= REPEAT_CATEGORY_PENALTY  # avoid too many same-category stops in one day
                 if best_day is not None and delta <= best_day[0]:
                     continue
                 if self.simulate_day(route[:pos] + [i] + route[pos:]) is None:
@@ -271,6 +280,30 @@ class ALNS:
         sol[self.rng.choice(busy)] = []
         return sol
 
+    # ------------------------------------------------------------ local search
+    def two_opt_day(self, route):
+        """Reorder stops within one day using 2-opt to shorten travel distance."""
+        if len(route) < 2:
+            return route
+        best = route[:]
+        best_km = self.day_km(best)
+        improved = True
+        while improved:
+            improved = False
+            for a in range(len(best) - 1):
+                for b in range(a + 1, len(best)):
+                    trial = best[:a] + best[a:b + 1][::-1] + best[b + 1:]
+                    km = self.day_km(trial)
+                    if km + 1e-6 < best_km and self.simulate_day(trial) is not None:
+                        best, best_km, improved = trial, km, True
+                        break
+                if improved:
+                    break
+        return best
+
+    def polish(self, sol):
+        return [self.two_opt_day(d) for d in sol]
+
     # ------------------------------------------------------------ main search
     def initial_solution(self):
         sol = [[] for _ in range(self.days)]
@@ -310,18 +343,20 @@ class ALNS:
             cand = [d[:] for d in current]
             cand = self.destroy_ops[di](cand)
             cand = self.repair_ops[ri](cand)
+            cand = self.polish(cand)
             cand_obj = self.objective(cand)
 
             sigma = 0
-            if cand_obj > best_obj + 1e-9 and self.is_feasible(cand):
-                best, best_obj = [d[:] for d in cand], cand_obj
-                current, cur_obj, sigma = cand, cand_obj, SIGMA_BEST
-                self.stats[self.destroy_ops[di].__name__] += 1
-                self.stats[self.repair_ops[ri].__name__] += 1
-            elif cand_obj > cur_obj + 1e-9:
-                current, cur_obj, sigma = cand, cand_obj, SIGMA_BETTER
-            elif self.rng.random() < math.exp((cand_obj - cur_obj) / temp):
-                current, cur_obj, sigma = cand, cand_obj, SIGMA_ACCEPTED
+            if self.is_feasible(cand):
+                if cand_obj > best_obj + 1e-9:
+                    best, best_obj = [d[:] for d in cand], cand_obj
+                    current, cur_obj, sigma = cand, cand_obj, SIGMA_BEST
+                    self.stats[self.destroy_ops[di].__name__] += 1
+                    self.stats[self.repair_ops[ri].__name__] += 1
+                elif cand_obj > cur_obj + 1e-9:
+                    current, cur_obj, sigma = cand, cand_obj, SIGMA_BETTER
+                elif self.rng.random() < math.exp((cand_obj - cur_obj) / temp):
+                    current, cur_obj, sigma = cand, cand_obj, SIGMA_ACCEPTED
 
             rf = self.p["reaction_factor"]
             self.dw[di] = (1 - rf) * self.dw[di] + rf * max(sigma, 0.5)

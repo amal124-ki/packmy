@@ -1,8 +1,8 @@
 Flask>=3.0
 Flask-SQLAlchemy>=3.1
 Flask-Login>=0.6
-PyMySQL>=1.1
-cryptography>=42
+psycopg[binary]>=3.2
+python-dotenv>=1.0
 scikit-fuzzy>=0.5
 numpy>=1.26
 scipy>=1.11
