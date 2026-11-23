@@ -95,7 +95,7 @@ packmy/
 | ALNS | Route order, opening hours, daily time window, budget |
 | Display | Day cards, day tabs, interactive Leaflet route map |
 | Expense | Doughnut chart by category, bar chart by day, itemised list, PDF |
-| Admin | Usage report, ALNS convergence and operator charts, algorithm metrics, user activation |
+| Admin | Usage report, ALNS convergence and operator charts, algorithm metrics, 
 
 ---
 
